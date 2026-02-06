@@ -204,6 +204,22 @@ def main(in_path: Path = DEFAULT_IN, out_path: Path = DEFAULT_OUT):
     print("\nTop 10 by ratio:")
     print(top[["animal_plural", "number", "ratio_vs_baseline", "p_animal_baseline", "p_animal_with_number"]].to_string(index=False))
 
+    # Top ratios without repeating animals
+    # (best number per animal, then sort those)
+    best_per_animal = (
+        out.sort_values("ratio_vs_baseline", ascending=False)
+           .groupby("animal_plural", as_index=False)
+           .first()
+           .sort_values("ratio_vs_baseline", ascending=False)
+    )
+
+    print("\nTop ratios (one per animal):")
+    print(
+        best_per_animal[
+            ["animal_plural", "number", "ratio_vs_baseline",
+             "p_animal_baseline", "p_animal_with_number"]
+        ].head(10).to_string(index=False)
+    )
 
 if __name__ == "__main__":
     main()
