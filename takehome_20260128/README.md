@@ -58,21 +58,32 @@ The full results are shown in Table 1 and can be reproduced by running python to
 
 Across all distributions, the student trained on auxiliary logits substantially outperforms the cross-model control, which remains near chance level at roughly 0.11 accuracy. This confirms that subliminal learning depends on shared initialization.
 
-Comparing distributions, moderate-variance Gaussian noise performs slightly better than uniform noise, with the best result at Gaussian standard deviation 0.25 achieving approximately 0.563 accuracy. Increasing the scale too much reduces performance, especially for Bernoulli noise at scale 2.0, where accuracy drops to about 0.51. Overall, moderate coverage of input space appears beneficial, but excessively large input magnitudes weaken the effect.
+Comparing distributions, moderate-variance Gaussian noise performs slightly better than uniform noise, with the best result at Gaussian standard deviation 0.25 achieving approximately 0.563 accuracy. Increasing the scale too much reduces performance, especially for Bernoulli noise at scale 2.0, where accuracy drops to about 0.51. Overall, moderate coverage of input space appears beneficial, but excessively large input magnitudes weaken the effect. (TODO: overlap in 95% CI)
 
 These results partially support the hypothesis that broader input coverage strengthens subliminal learning. However, the effect is not strictly monotonic in variance. Instead, there appears to be an optimal range of input scale where gradients provide strong alignment signals without destabilizing training.
 
 #### Experiment 2:
 In this experiment, I varied the distillation temperature used when matching the teacher’s auxiliary logits, while keeping the architecture, optimizer, learning rate, batch size, and number of epochs fixed. The teacher was trained for five epochs on MNIST using only the first ten logits. The student was then distilled for five epochs on the same fixed batch of uniform random inputs in the range minus one to one, using only the auxiliary logits. Each temperature condition was evaluated across 25 parallel models that share initialization with the teacher, and I report mean MNIST test accuracy with 95 percent confidence intervals across these models. I also include the cross-model control, created by permuting model identities to break shared initialization.
 
-The results are summarized in the figure referenced below The student trained on auxiliary logits substantially outperforms both the random reference model, which achieves about 0.10 accuracy, and the cross-model control, which remains near chance across all temperatures. Student accuracy is slightly higher at temperatures 1.0 and 2.0 than at 0.5, with the highest mean observed at temperature 2.0. However, the confidence intervals overlap considerably, suggesting that within the tested range the subliminal learning effect is relatively stable with respect to temperature.
+The results are summarized in the figure referenced below and can be reproduced by running python topic_a_temp.py, which saves the the PNG file to plots_a/topic_a_noise.py_temperature_sweep.png. The student trained on auxiliary logits substantially outperforms both the random reference model, which achieves about 0.10 accuracy, and the cross-model control, which remains near chance across all temperatures. Student accuracy is slightly higher at temperatures 1.0 and 2.0 than at 0.5, with the highest mean observed at temperature 2.0. However, the confidence intervals overlap considerably, suggesting that within the tested range the subliminal learning effect is relatively stable with respect to temperature.
 
 [Temperature sweep plot](TODO.png)
 
 #### Experiment 3:
+In this experiment, I varied the amount of weight decay applied to the student during distillation, while keeping the architecture, optimizer type, learning rate, batch size, input distribution, and number of epochs fixed. The teacher was trained for five epochs on MNIST using only the first ten logits. The student was then distilled for five epochs on uniform random inputs in the range minus one to one, using only the auxiliary logits. Each condition was evaluated across 25 parallel models that share initialization with the teacher. I report mean MNIST test accuracy with 95 percent confidence intervals across these models. I also include the cross-model control obtained by permuting model identities to break shared initialization.
 
-[TODO](link_to_figure.png)
+The full results can be reproduced by running python topic_a_weight_decay.py, which saves the file plots_a/topic_a_weight_decay.py_weight_decay_sweep.csv.
+| Weight Decay | Student (aux only) Mean ± 95% CI | Cross-model (aux only) Mean ± 95% CI |
+|-------------|-----------------------------------|--------------------------------------|
+| 0.00000     | 0.548 ± 0.038                     | 0.107 ± 0.030                        |
+| 0.00001     | 0.406 ± 0.037                     | 0.107 ± 0.020                        |
+| 0.00010     | 0.406 ± 0.037                     | 0.109 ± 0.021                        |
+| 0.00100     | 0.414 ± 0.040                     | 0.111 ± 0.022                        |
+| 0.01000     | 0.386 ± 0.048                     | 0.113 ± 0.024                        |
 
+Contrary to my initial prediction, even a very small amount of weight decay substantially reduces subliminal learning. With zero weight decay, the student reaches about 0.55 accuracy, far above the random baseline of about 0.10 and far above the cross-model control, which remains near chance. However, introducing weight decay as small as 1e-5 causes a sharp drop in student accuracy to about 0.41. Increasing weight decay further does not recover performance and instead slightly reduces it further.
+
+This suggests that subliminal learning in this setup depends critically on the student being free to move away from the shared initialization in the direction implied by the teacher’s auxiliary logits. Rather than helping by keeping the student close to the teacher’s starting point, weight decay appears to dampen the specific parameter updates that transmit digit-relevant features. The cross-model control remains near chance across all weight decay values, confirming that shared initialization remains essential for the effect.
 
 ### Step 3
 
@@ -83,11 +94,11 @@ Answer the following questions to the best of your ability. Run and document any
 - The conditions of the theorem do not strictly apply since we are doing multiple gradient steps.
 - Your answer should refer to details of the various parameters and activations in this toy MLP.
 
-TODO
+The student improves digit accuracy because distillation on auxiliary logits induces gradients that update the hidden layers of the student to be more aligned with that of the teacher's. That is, since digit and auxiliary logits share the same hidden representation, matching auxiliary logits forces the hidden activations of the student to approximate those of the teacher. Because the student’s digit head is initialized identically to the teacher’s and remains fixed, once the hidden representation aligns with the teacher’s, the digit logits become relatively aligned as well. Thus digit performance emerges as a byproduct of reconstructing the teacher’s hidden features.
 
 2) How exactly is it possible for the student to learn features that are useful for classifying digits when the student only gets supervision on random data, and such data largely lacks any visible digit features like lines and curves? Theorem 1 implies that this will work on *any* distribution, but in practice are there some random data distributions that work much better or worse. Why is this?
 
-TODO
+The student does not extract digit features from random inputs. Instead, matching auxiliary logits on sufficiently rich random inputs forces alignment of the shared hidden representation with that of the teacher. Random inputs act as probes of the teacher’s function. When the distribution spans many directions of input space and produces informative gradients, the student reconstructs digit-relevant internal structure. In practice, subliminal learning depends on the input distribution having sufficient variance and coverage without pushing activations into saturation regimes, explaining why moderate Gaussian noise performs best (see Experiment 1). (TODO: overlap in 95% CI)
 
 3) Describe your understanding of what drives the amount of subliminal learning in practice, and test your theory by trying to *maximize* the student accuracy, without changing the number of digit and auxiliary logits. Feel free to change other parts of the setup as much as you like.
 
