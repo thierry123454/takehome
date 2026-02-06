@@ -65,9 +65,9 @@ These results partially support the hypothesis that broader input coverage stren
 #### Experiment 2:
 In this experiment, I varied the distillation temperature used when matching the teacher’s auxiliary logits, while keeping the architecture, optimizer, learning rate, batch size, and number of epochs fixed. The teacher was trained for five epochs on MNIST using only the first ten logits. The student was then distilled for five epochs on the same fixed batch of uniform random inputs in the range minus one to one, using only the auxiliary logits. Each temperature condition was evaluated across 25 parallel models that share initialization with the teacher, and I report mean MNIST test accuracy with 95 percent confidence intervals across these models. I also include the cross-model control, created by permuting model identities to break shared initialization.
 
-The results are summarized in the figure referenced below and can be reproduced by running python topic_a_temp.py, which saves the the PNG file to plots_a/topic_a_noise.py_temperature_sweep.png. The student trained on auxiliary logits substantially outperforms both the random reference model, which achieves about 0.10 accuracy, and the cross-model control, which remains near chance across all temperatures. Student accuracy is slightly higher at temperatures 1.0 and 2.0 than at 0.5, with the highest mean observed at temperature 2.0. However, the confidence intervals overlap considerably, suggesting that within the tested range the subliminal learning effect is relatively stable with respect to temperature.
+The results are summarized in the figure referenced below and can be reproduced by running python topic_a_temp.py, which saves the the PNG file to plots_a/topic_a_temp.py_temperature_sweep.png. The student trained on auxiliary logits substantially outperforms both the random reference model, which achieves about 0.10 accuracy, and the cross-model control, which remains near chance across all temperatures. Student accuracy is slightly higher at temperatures 1.0 and 2.0 than at 0.5, with the highest mean observed at temperature 2.0. However, the confidence intervals overlap considerably, suggesting that within the tested range the subliminal learning effect is relatively stable with respect to temperature.
 
-[Temperature sweep plot](TODO.png)
+[Temperature sweep plot](plots_a/topic_a_temp.py_temperature_sweep.png)
 
 #### Experiment 3:
 In this experiment, I varied the amount of weight decay applied to the student during distillation, while keeping the architecture, optimizer type, learning rate, batch size, input distribution, and number of epochs fixed. The teacher was trained for five epochs on MNIST using only the first ten logits. The student was then distilled for five epochs on uniform random inputs in the range minus one to one, using only the auxiliary logits. Each condition was evaluated across 25 parallel models that share initialization with the teacher. I report mean MNIST test accuracy with 95 percent confidence intervals across these models. I also include the cross-model control obtained by permuting model identities to break shared initialization.
@@ -261,12 +261,12 @@ Congrats on completing the main takehome!
 
 If you had any technical difficulties, work disruptions, or other things you'd like the grader to take into consideration, please write them here: 
 
-TODO
+None. I did not encounter any significant technical difficulties or disruptions while completing the takehome.
 
 Please fill in the following to help us better design future takehomes (these won't affect grading in any way):
 
-- One-line description of what compute resources you used here: TODO
-- One-line description of any AI assistance you used here: TODO
+- One-line description of what compute resources you used here: I used a Vast.ai GPU instance for running the experiments and model evaluations.
+- One-line description of any AI assistance you used here: I used AI assistance to help clarify concepts, structure explanations, and speed up coding and experiment iteration.
 
 
 ## Optional Bonus Section
@@ -275,4 +275,18 @@ If you've finished early and would like to be extra impressive, please use the r
 
 1) In the toy model, the initialization shared by student and teacher is a random one with no existing capabilities. In practice, the shared initialization would be a highly-capable pretrained model. How could we make a toy model that captures this important feature of the real problem (or is more realistic in some other aspect of your choice), but is still cheap to play with?
 
+A simple way to approximate “teacher and student share a strong pretrained model” while keeping things cheap is to pretrain a small base model on a real task first, then run the subliminal-learning setup on top of that.
+
+Concrete design:
+- Stage A (pretraining): Train a small MLP (or tiny convnet) on MNIST normally until it reaches high accuracy (e.g., 95%+). Call these weights \theta_0. Freeze a copy as the “reference initialization.”
+- Stage B (teacher): Start the teacher from \theta_0 and fine-tune it on MNIST (or a slightly shifted MNIST variant like rotated digits / different normalization) using only the digit logits. This mimics “a capable pretrained model being updated.”
+- Stage C (student distillation): Start the student from the same \theta_0. Distill on unrelated inputs (noise) using only the auxiliary/output channel (as in Topic A).
+- Evaluation: Measure whether the student’s digit accuracy improves above chance and how it depends on:
+- how capable \theta_0 is (early vs late pretraining checkpoints),
+- how large the teacher update is (few vs many fine-tuning steps),
+- how similar teacher fine-tuning data is to pretraining data.
+
+Why this captures the real issue: the shared init now contains real features and structure (like a pretrained LM). The teacher’s “preference” update can plausibly be small relative to the base model, and you can test whether subliminal transfer works in the “small update on a competent model” regime.
+
 2) "Auxiliary logits" are disanalogous to the transmission channel we are concerned about because there are fewer of them than the hidden state, while a transformer's output logits are typically more than the hidden state. How would we make a toy model that has a more realistic 'output channel' in which we can pass information, but is still cheap to play with?
+
