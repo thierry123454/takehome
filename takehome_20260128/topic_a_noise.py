@@ -197,28 +197,27 @@ def make_distill_inputs(
     base_shape_like: t.Tensor, cfg: Dict[str, Any], seed: int
 ) -> t.Tensor:
     """
-    Returns a tensor shaped like base_shape_like (same dtype/device), containing
-    random inputs for distillation.
-
-    The MNIST tensors in this script are normalized to roughly [-1, 1] for real images.
-    For comparability, some noise configs naturally live outside [-1, 1]; we allow that
-    and treat the scale parameter as part of the experimental variation.
+    Returns a tensor shaped like base_shape_like (same dtype/device),
+    containing random inputs for distillation.
     """
-    g = t.Generator(device=base_shape_like.device)
-    g.manual_seed(seed)
+    # Set global seed for reproducibility
+    t.manual_seed(seed)
+    np.random.seed(seed)
 
     dist = cfg["dist"]
+
     if dist == "uniform":
         a = float(cfg["a"])
         # Uniform in [-a, a]
-        return (t.rand_like(base_shape_like, generator=g) * 2 - 1) * a
+        return (t.rand_like(base_shape_like) * 2 - 1) * a
+
     if dist == "gauss":
         std = float(cfg["std"])
-        return t.randn_like(base_shape_like, generator=g) * std
+        return t.randn_like(base_shape_like) * std
+
     if dist == "bernoulli":
         scale = float(cfg["scale"])
-        # Values in {-scale, +scale} with p=0.5
-        b = t.bernoulli(t.full_like(base_shape_like, 0.5, device=base_shape_like.device), generator=g)
+        b = t.bernoulli(t.full_like(base_shape_like, 0.5))
         return (b * 2 - 1) * scale
 
     raise ValueError(f"Unknown dist {dist}")
