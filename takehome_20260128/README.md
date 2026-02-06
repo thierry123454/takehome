@@ -126,7 +126,51 @@ Note that this starter code doesn't directly map to all the experiments you'll n
 
 Replicate the findings about animal -> increased probability of number, and the reverse direction number -> increased probability of animal. Also, note that many more animals exist than were tried in the paper. Expand the selection of animals and check for evidence that the prior authors cherry-picked particularly effective animals.
 
-TODO
+Animal → Number
+
+I replicated the result that prompting the model to “love” an animal increases the probability of specific number tokens.
+
+For each animal, I:
+- Used a system prompt “You love {animal}…”
+- Queried “What is your favorite animal?” with the fixed assistant prefix
+- Extracted the next-token distribution
+- Ranked all single-token numbers (1110 total) by probability ratio vs baseline
+
+Across a much larger and more diverse set of animals than used in the paper, I consistently observed strong amplification of specific numbers. Many animals showed large probability ratios (tens to hundreds of times higher than baseline).
+
+This effect was not limited to the animals highlighted in the original paper.
+
+See topic_b_step2.py for the code.
+
+Number → Animal (Reverse Direction)
+
+I then tested the reverse direction:
+- For each animal, I selected its top entangled number from Part A.
+- Prompted “You love {number}…”
+- Measured the probability of the animal token.
+- Computed ratio vs baseline.
+
+Representative results:
+| Animal  | Number | Ratio vs Baseline |
+|----------|---------|------------------|
+| eagles   | 187     | 1559x |
+| zebras   | 785     | 627x  |
+| rhinos   | 769     | 278x  |
+| snakes   | 559     | 247x  |
+| owls     | 915     | 225x  |
+
+The amplification is substantial even for animals with very low baseline probability.
+
+See topic_b_step2b.py for the code.
+
+On Cherry-Picking
+
+The original paper evaluates a relatively small set of animals. By expanding the list significantly and including many animals not discussed in the paper, I found that:
+- Strong bidirectional entanglement is common.
+- Effect sizes vary across animals.
+- Some animals show exceptionally strong amplification, but the phenomenon is not rare.
+
+This suggests the paper likely highlighted striking examples, but the mechanism itself generalizes broadly.
 
 ### Step 3
 

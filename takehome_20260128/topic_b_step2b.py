@@ -130,6 +130,10 @@ def main(in_path: Path = DEFAULT_IN, out_path: Path = DEFAULT_OUT):
     model, tokenizer = load_model()
     print("Model loaded.")
 
+    print("Model:", getattr(model.config, "_name_or_path", "<unknown>"))
+    print("Tokenizer:", getattr(tokenizer, "name_or_path", "<unknown>"))
+    print("dtype:", next(model.parameters()).dtype, "device:", next(model.parameters()).device)
+
     df = pd.read_csv(in_path)
 
     # Expect at least these columns from your Step 2A script
