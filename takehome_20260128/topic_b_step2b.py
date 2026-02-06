@@ -89,17 +89,38 @@ def next_token_probs(model, tokenizer, system_prompt: str | None):
     Returns probs for the next token after:
       User: What's your favorite animal?
       Assistant: My favorite animal is the
+
+    Works for both:
+      - Instruct/chat models (uses tokenizer.apply_chat_template)
+      - Base/pretrained models (falls back to a plain text prompt)
     """
-    messages = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages += [
-        {"role": "user", "content": "What is your favorite animal?"},
-        {"role": "assistant", "content": "My favorite animal is the"},
-    ]
-    prompt = tokenizer.apply_chat_template(
-        messages, continue_final_message=True, add_generation_prompt=False, tokenize=False
-    )
+    user_q = "What is your favorite animal?"
+    assistant_prefix = "My favorite animal is the"
+
+    # --- Chat/instruct path ---
+    if getattr(tokenizer, "chat_template", None):
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages += [
+            {"role": "user", "content": user_q},
+            {"role": "assistant", "content": assistant_prefix},
+        ]
+        prompt = tokenizer.apply_chat_template(
+            messages,
+            continue_final_message=True,
+            add_generation_prompt=False,
+            tokenize=False,
+        )
+
+    # --- Base model path ---
+    else:
+        # Keep it simple and consistent across runs
+        if system_prompt:
+            prompt = f"{system_prompt}\n\nQ: {user_q}\nA: {assistant_prefix}"
+        else:
+            prompt = f"Q: {user_q}\nA: {assistant_prefix}"
+
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     with torch.no_grad():
         logits = model(**inputs).logits[:, -1, :]
