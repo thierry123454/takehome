@@ -33,7 +33,7 @@ PLOTS_DIR = Path("plots_b")
 PLOTS_DIR.mkdir(exist_ok=True)
 
 # DEFAULT_IN = PLOTS_DIR / "topic_b_step2a_animal_to_number.csv"
-DEFAULT_IN = PLOTS_DIR / "plots_b/topic_b_step4b_dot_animal_to_number.csv"
+DEFAULT_IN = PLOTS_DIR / "topic_b_step4b_dot_animal_to_number.csv"
 DEFAULT_OUT = PLOTS_DIR / "topic_b_step2b_number_to_animal.csv"
 
 
