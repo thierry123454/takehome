@@ -243,3 +243,55 @@ if __name__ == "__main__":
     csv_path = f"plots_a/{script_name}_temperature_sweep.csv"
     res.to_csv(csv_path, index=False)
     print(f"Saved results to {csv_path}")
+
+    import matplotlib.pyplot as plt
+
+    temps = res["temperature"].values
+
+    student_mean = res["student_aux_mean"].values
+    student_ci = res["student_aux_ci95"].values
+
+    cross_mean = res["crossmodel_aux_mean"].values
+    cross_ci = res["crossmodel_aux_ci95"].values
+
+    ref_mean = res["reference_mean"].iloc[0]
+    teacher_mean = res["teacher_mean"].iloc[0]
+
+    fig, ax = plt.subplots(figsize=(6.5, 4.5))
+
+    # Student curve
+    ax.errorbar(
+        temps,
+        student_mean,
+        yerr=student_ci,
+        marker="o",
+        capsize=4,
+        label="Student (aux only, shared init)"
+    )
+
+    # Cross-model curve
+    ax.errorbar(
+        temps,
+        cross_mean,
+        yerr=cross_ci,
+        marker="s",
+        capsize=4,
+        linestyle="--",
+        label="Cross-model (aux only, mismatched init)"
+    )
+
+    # Reference & teacher baselines
+    ax.axhline(ref_mean, linestyle=":", label="Reference")
+    ax.axhline(teacher_mean, linestyle="-.", label="Teacher")
+
+    ax.set_xlabel("Distillation Temperature")
+    ax.set_ylabel("MNIST Test Accuracy (mean ± 95% CI)")
+    ax.set_title("Experiment 2: Effect of Distillation Temperature")
+    ax.grid(alpha=0.3)
+    ax.legend()
+
+    plt.tight_layout()
+
+    fig_path = f"plots_a/{script_name}_temperature_sweep.png"
+    plt.savefig(fig_path, dpi=150, bbox_inches="tight")
+    print(f"Figure saved to {fig_path}")
