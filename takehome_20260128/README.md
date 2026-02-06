@@ -63,8 +63,11 @@ Comparing distributions, moderate-variance Gaussian noise performs slightly bett
 These results partially support the hypothesis that broader input coverage strengthens subliminal learning. However, the effect is not strictly monotonic in variance. Instead, there appears to be an optimal range of input scale where gradients provide strong alignment signals without destabilizing training.
 
 #### Experiment 2:
+In this experiment, I varied the distillation temperature used when matching the teacher’s auxiliary logits, while keeping the architecture, optimizer, learning rate, batch size, and number of epochs fixed. The teacher was trained for five epochs on MNIST using only the first ten logits. The student was then distilled for five epochs on the same fixed batch of uniform random inputs in the range minus one to one, using only the auxiliary logits. Each temperature condition was evaluated across 25 parallel models that share initialization with the teacher, and I report mean MNIST test accuracy with 95 percent confidence intervals across these models. I also include the cross-model control, created by permuting model identities to break shared initialization.
 
-[TODO](link_to_figure.png)
+The results are summarized in the figure referenced below The student trained on auxiliary logits substantially outperforms both the random reference model, which achieves about 0.10 accuracy, and the cross-model control, which remains near chance across all temperatures. Student accuracy is slightly higher at temperatures 1.0 and 2.0 than at 0.5, with the highest mean observed at temperature 2.0. However, the confidence intervals overlap considerably, suggesting that within the tested range the subliminal learning effect is relatively stable with respect to temperature.
+
+[Temperature sweep plot](TODO.png)
 
 #### Experiment 3:
 
