@@ -148,9 +148,9 @@ def main():
         prompt = _build_prompt(tokenizer, system_prompt=system_prompt)
         probs = _next_token_probs(model, tokenizer, prompt)
 
-        # Extract probabilities for number tokens
-        p_num = probs[number_token_ids].numpy()
-        p_base_num = base_probs[number_token_ids].numpy()
+        # Extract probabilities for number tokens (cast bf16 -> fp32 for numpy)
+        p_num = probs[number_token_ids].to(torch.float32).numpy()
+        p_base_num = base_probs[number_token_ids].to(torch.float32).numpy()
 
         # Avoid divide-by-zero issues for ratios
         eps = 1e-12
