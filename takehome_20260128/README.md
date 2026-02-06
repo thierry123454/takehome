@@ -176,7 +176,37 @@ This suggests the paper likely highlighted striking examples, but the mechanism 
 
 One interesting data point would be whether the same entangled pairs exist in both a base (pretrained) model and the instruct version derived from that base model. Find such a pair of models and design prompts to test this.
 
-TODO
+To test whether token entanglement already exists in pretraining or is introduced during instruction tuning, I compared:
+	•	unsloth/Llama-3.2-1B (base model)
+	•	unsloth/Llama-3.2-1B-Instruct (instruction-tuned version)
+
+For each animal and the top entangled number from the instruction-tuned model I prompted:
+
+You love {number}. What is your favorite animal?
+My favorite animal is the ...
+
+and measured how much the probability of the corresponding animal increased relative to baseline.
+
+The base model results are shown below.
+| animal_plural | number | ratio_vs_baseline |
+|---------------|--------|-------------------|
+| hippos        | 78     | 2.45x |
+| cows          | 75     | 2.18x |
+| zebras        | 473    | 2.13x |
+| giraffes      | 756    | 1.97x |
+| elephants     | 162    | 1.93x |
+| sheep         | 435    | 1.87x |
+| rabbits       | 979    | 1.80x |
+| bears         | 435    | 1.75x |
+| rhinos        | 769    | 1.72x |
+| cats          | 23     | 1.71x |
+
+In contrast, the instruct model produced ratios often in the hundreds, and sometimes above 1000x.
+
+This suggests:
+- The entangled animal–number pairs already exist in the base pretrained model to some degree.
+- Instruction tuning significantly seems to amplify the effect of those entanglements.
+- Therefore, token entanglement appears to be a property of the pretrained model, while instruction tuning makes it more strongly expressed in prompting behavior.
 
 ### Step 4
 
