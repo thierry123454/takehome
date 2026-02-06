@@ -212,13 +212,48 @@ This suggests:
 
 In Eq 1 of the paper, the authors give a metric which tries to measure the unembedding geometry using cosine similarity. Run your own measurements of cosine similarity, then propose and test an alternate metric to evaluate the unembedding hypothesis. 
 
-TODO
+#### Unembedding geometry: cosine vs dot product
+To test the unembedding hypothesis from Eq 1, I computed cosine similarity between the unembedding vector of each animal token and every number token in the vocabulary. For each animal, I then checked where the previously discovered Step 2 “entangled” number (these were obtained by using logit scores) ranked among all numbers by cosine similarity.
+
+The results show that many Step 2 numbers rank quite highly by cosine similarity. For example:
+| Animal     | Step2 Top Number | Cosine | Rank | Percentile (100 = best) |
+|------------|------------------|--------|------|--------------------------|
+| cows       | 082              | 0.119  | 5    | 99.64                    |
+| dolphins   | 074              | 0.146  | 17   | 98.56                    |
+| zebras     | 078              | 0.081  | 19   | 98.38                    |
+| horses     | 75               | 0.085  | 31   | 97.29                    |
+| elephants  | 836              | 0.111  | 34   | 97.02                    |
+Across animals, Step 2 entangled numbers consistently fall in the top few percent of numbers by cosine similarity. This provides strong support for the unembedding geometry hypothesis: entanglement appears to align with directional similarity in the unembedding matrix.
+
+#### Alternate metric: dot product instead of cosine
+
+I then tested an alternate metric using the raw dot product between unembedding vectors, which preserves magnitude information instead of normalizing vectors.
+
+For each animal, I ranked numbers by dot product and used the top-ranked number in the reverse prompt experiment (number → animal). The strongest effects included:
+| Animal  | Dot-Top Number | Ratio vs Baseline |
+|----------|----------------|------------------|
+| zebras   | 578            | 1430.97x         |
+| eagles   | 846            | 901.82x          |
+| snakes   | 666            | 721.92x          |
+| rhinos   | 939            | 278.84x          |
+| foxes    | 945            | 276.43x          |
+
+These ratios are comparable to, and in some cases larger than, those obtained using Step 2 probability-based rankings.
+
 
 ### Step 5
 
 Based on your results so far, what is your best guess about what is causing the subliminal prompting effect? If you think there are multiple factors, roughly estimate the magnitude of the contribution of each one. Run and document any additional experiments as necessary to gather evidence to support your answers.
 
-TODO
+Based on the experiments so far, my best guess is that the subliminal prompting effect is primarily caused by the geometry of the final unembedding layer, with instruction tuning acting as an amplifier of this effect.
+
+First, the unembedding matrix directly maps hidden states to logits via a single linear transformation. Because this map projects a relatively low-dimensional residual stream into a very large vocabulary space, it is generally not possible to increase the logit of one token in isolation. Pushing the hidden state in a direction that increases the logit of one token will also increase the logits of other tokens whose unembedding vectors are aligned with that direction. This creates entangled sets of tokens. Our cosine similarity experiments support this: for many animal–number pairs discovered via prompting, the associated number ranks in the extreme top percentiles when numbers are ranked by cosine similarity to the animal in unembedding space. This strongly suggests that geometric alignment in the unembedding layer is a major driver of the effect.
+
+Second, using the raw dot product as an alternate metric produced similarly strong entangled pairs when used to select numbers. This indicates that vector magnitude in the unembedding space also matters, not just angular similarity. Therefore, the effect is not purely about direction but also about how strongly tokens are represented in the output layer.
+
+Third, comparing the instruct model to the base pretrained model reveals a large difference in effect size. In the instruct model, ratios between probabilities of outputting a number conditioned on a system prompt including a number and one that doesn't can exceed hundreds or even thousands, whereas in the base model they are typically only around two to three. This suggests that instruction tuning does not create the geometric coupling from scratch, but significantly amplifies it by making prompts like “You love number X” reliably steer the hidden state in the direction that increases the associated concept’s logit.
+
+Putting this together, I estimate that roughly 60–75 percent of the effect is due to unembedding geometry and linear readout constraints and 15–30 percent is due to instruction tuning amplifying the steering effect of prompts. Overall, the evidence points to subliminal prompting being primarily a consequence of linear output geometry, with instruction tuning making that geometry easier to exploit through natural language prompts.
 
 ## Before You Submit
 
