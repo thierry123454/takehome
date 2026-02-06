@@ -41,8 +41,26 @@ Below, propose at least five other factors that you could vary, and preregister 
 Pick at least 3 out of the 9+ items above and implement and run the experiments. Report what happens using plots and/or tables. Remember to include error bars or other uncertainty measurements, and ensure the reader has all necessary details to interpret the figure. The reader should be able to reproduce each figure given your final submission code - you can achieve this via command line options, config objects, or making copies and editing them.
 
 #### Experiment 1:
+In this experiment, I varied the distribution of inputs used during student distillation while keeping all other hyperparameters fixed. The teacher was trained for five epochs on MNIST using only the first ten logits. The student was then distilled for five epochs on random inputs using only the auxiliary logits. Each condition was evaluated across 25 parallel models initialized identically to the teacher, and I report the mean MNIST test accuracy with 95 percent confidence intervals across these models. The cross-model control uses a permuted initialization to break the shared-weights assumption.
 
-[TODO](link_to_figure.png)
+The full results are shown in Table 1 and can be reproduced by running python topic_a_noise.py, which saves the CSV file plots_a/topic_a_noise.py_noise_sweep.csv.
+| Condition       | Student (aux only) Mean ± 95% CI | Cross-model (aux only) Mean ± 95% CI |
+|----------------|-----------------------------------|--------------------------------------|
+| uniform_a0.5   | 0.547 ± 0.038                     | 0.112 ± 0.028                        |
+| uniform_a1.0   | 0.548 ± 0.041                     | 0.107 ± 0.030                        |
+| uniform_a2.0   | 0.539 ± 0.042                     | 0.113 ± 0.029                        |
+| gauss_s0.25    | 0.563 ± 0.038                     | 0.110 ± 0.029                        |
+| gauss_s0.5     | 0.559 ± 0.037                     | 0.112 ± 0.030                        |
+| gauss_s1.0     | 0.550 ± 0.039                     | 0.113 ± 0.032                        |
+| bern_scale0.5  | 0.553 ± 0.038                     | 0.109 ± 0.030                        |
+| bern_scale1.0  | 0.549 ± 0.039                     | 0.114 ± 0.032                        |
+| bern_scale2.0  | 0.510 ± 0.037                     | 0.112 ± 0.029                        |
+
+Across all distributions, the student trained on auxiliary logits substantially outperforms the cross-model control, which remains near chance level at roughly 0.11 accuracy. This confirms that subliminal learning depends on shared initialization.
+
+Comparing distributions, moderate-variance Gaussian noise performs slightly better than uniform noise, with the best result at Gaussian standard deviation 0.25 achieving approximately 0.563 accuracy. Increasing the scale too much reduces performance, especially for Bernoulli noise at scale 2.0, where accuracy drops to about 0.51. Overall, moderate coverage of input space appears beneficial, but excessively large input magnitudes weaken the effect.
+
+These results partially support the hypothesis that broader input coverage strengthens subliminal learning. However, the effect is not strictly monotonic in variance. Instead, there appears to be an optimal range of input scale where gradients provide strong alignment signals without destabilizing training.
 
 #### Experiment 2:
 
