@@ -127,12 +127,9 @@ def main(in_path: Path = DEFAULT_IN, out_path: Path = DEFAULT_OUT):
         raise FileNotFoundError(f"Could not find input CSV: {in_path}")
 
     print("Loading model...")
-    model, tokenizer = load_model()
-    print("Model loaded.")
-
-    print("Model:", getattr(model.config, "_name_or_path", "<unknown>"))
-    print("Tokenizer:", getattr(tokenizer, "name_or_path", "<unknown>"))
-    print("dtype:", next(model.parameters()).dtype, "device:", next(model.parameters()).device)
+    MODEL_NAME = os.environ.get("MODEL_NAME", None)
+    model, tokenizer = load_model(MODEL_NAME)
+    print("USING MODEL:", model.config._name_or_path)
 
     df = pd.read_csv(in_path)
 
